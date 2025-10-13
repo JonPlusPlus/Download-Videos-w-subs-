@@ -31,11 +31,17 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
 
         # Download the video
         echo "Downloading video from: $VIDEO_URL"
-        curl "$VIDEO_URL"  # This will save the file with the same name as in the URL
-        
+        yt-dlp -o "%(title)s.%(ext)s" -f bestvideo+bestaudio "$VIDEO_URL"
+        VIDEO_FILE=$(yt-dlp -g "$VIDEO_URL" | head -n 1 | sed 's/^.*\///;s/\?.*$//')  # Extract filename from URL
+
         # Download the closed captions
         echo "Downloading closed captions from: $CC_URL"
-        curl "$CC_URL"  # This will save the file with the same name as in the URL
+        yt-dlp -o "%(title)s-en.vtt" "$CC_URL"
+        CC_FILE="${VIDEO_FILE%-*}-en.vtt"  # Assuming captions file matches video name pattern
+
+        # Merge video and subtitles
+        echo "Merging video and subtitles..."
+        ffmpeg -i "$VIDEO_FILE" -i "$CC_FILE" -c copy -c:s mov_text "output_with_subtitles.mp4"
 
         # Increment the counter
         COUNTER=$((COUNTER + 1))
@@ -43,5 +49,6 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
         echo "Error: Invalid URL pair at line $COUNTER, skipping."
     fi
 done < "$INPUT_FILE"
+
 
 echo "Finished downloading all videos and captions."
