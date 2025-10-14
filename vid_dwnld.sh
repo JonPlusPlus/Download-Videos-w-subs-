@@ -29,26 +29,43 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
         # Inform the user which pair we are processing
         echo "Processing pair $COUNTER..."
 
+
+        # Define the output template and filename
+        VIDEO_OUTPUT_TEMPLATE="%(title)s.%(ext)s"
+
         # Download the video
         echo "Downloading video from: $VIDEO_URL"
-        yt-dlp -o "%(title)s.%(ext)s" -f bestvideo+bestaudio "$VIDEO_URL"
-        VIDEO_FILE=$(yt-dlp -g "$VIDEO_URL" | head -n 1 | sed 's/^.*\///;s/\?.*$//')  # Extract filename from URL
+        yt-dlp -o "$VIDEO_OUTPUT_TEMPLATE" -f bestvideo+bestaudio "$VIDEO_URL"
 
-        # Download the closed captions
-        echo "Downloading closed captions from: $CC_URL"
-        yt-dlp -o "%(title)s-en.vtt" "$CC_URL"
-        CC_FILE="${VIDEO_FILE%-*}-en.vtt"  # Assuming captions file matches video name pattern
+        # Extract the actual downloaded filename from the output template
+        VIDEO_FILE=$(ls -1t *.mp4 | head -n 1)
+
+        echo "Downloaded video file: $VIDEO_FILE"
+        
+
+        # Define the output template and filename
+        CC_OUTPUT_TEMPLATE="%(title)s-en.vtt"
+
+        # Download the subtitle
+        echo "Downloading subtitles video from: $CC_URL"
+        yt-dlp -o "$CC_OUTPUT_TEMPLATE" "$CC_URL"
+
+        # Extract the actual downloaded filename from the output template
+        CC_FILE=$(ls -1t *.vtt | head -n 1)
+
+        echo "Downloaded subtitles video file: $CC_FILE"
+
 
         # Merge video and subtitles
         echo "Merging video and subtitles..."
         ffmpeg -i "$VIDEO_FILE" -i "$CC_FILE" -c copy -c:s mov_text "output_with_subtitles.mp4"
 
+        
         # Increment the counter
         COUNTER=$((COUNTER + 1))
     else
         echo "Error: Invalid URL pair at line $COUNTER, skipping."
     fi
 done < "$INPUT_FILE"
-
 
 echo "Finished downloading all videos and captions."
