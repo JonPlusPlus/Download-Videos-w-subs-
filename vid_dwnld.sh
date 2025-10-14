@@ -38,7 +38,7 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
         yt-dlp -o "$VIDEO_OUTPUT_TEMPLATE" -f bestvideo+bestaudio "$VIDEO_URL"
 
         # Extract the actual downloaded filename from the output template
-        VIDEO_FILE=$(ls -1t *.mp4 | head -n 1)
+        VIDEO_FILE=$(find . -maxdepth 1 -name "*.mp4" -print | sort -t/ -k2 | tail -n 1)
 
         echo "Downloaded video file: $VIDEO_FILE"
         
@@ -51,7 +51,7 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
         yt-dlp -o "$CC_OUTPUT_TEMPLATE" "$CC_URL"
 
         # Extract the actual downloaded filename from the output template
-        CC_FILE=$(ls -1t *.vtt | head -n 1)
+        CC_FILE=$(find . -maxdepth 1 -name "*.vtt" -print | sort -t/ -k2 | tail -n 1)
 
         echo "Downloaded subtitles video file: $CC_FILE"
 
