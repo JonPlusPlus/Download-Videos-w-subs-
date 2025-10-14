@@ -62,7 +62,7 @@ while IFS=" " read -r VIDEO_URL CC_URL; do
 
         
         # Increment the counter
-        COUNTER=$((COUNTER + 1))
+        COUNTER=$(expr $COUNTER + 1)
     else
         echo "Error: Invalid URL pair at line $COUNTER, skipping."
     fi
