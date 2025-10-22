@@ -1,71 +1,73 @@
 #!/bin/sh
 
+# CSV file
+CSV_FILE="$1"
 
-# Expected format of input-file:
-# http://example.com/video1.mp4 http://example.com/cc1.vtt
-# http://example.com/video2.mp4 http://example.com/cc2.vtt
-# http://example.com/video3.mp4 http://example.com/cc3.vtt
+# Set UTF-8 locale (for glibc-based distros)
+export LC_ALL=C.UTF-8
 
-
-# Ensure that exactly one argument (the file) is provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <input_file>"
-    exit 1
-fi
-
-# Assign the input file from the argument
-INPUT_FILE=$1
-
-# Check if the input file exists
-if [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: File '$INPUT_FILE' not found!"
-    exit 1
-fi
-
-# Read the input file line by line
-COUNTER=1
-while IFS=" " read -r VIDEO_URL CC_URL; do
-    if [ -n "$VIDEO_URL" ] && [ -n "$CC_URL" ]; then
-        # Inform the user which pair we are processing
-        echo "Processing pair $COUNTER..."
-
-
-        # Define the output template and filename
-        VIDEO_OUTPUT_TEMPLATE="%(title)s.%(ext)s"
-
-        # Download the video
-        echo "Downloading video from: $VIDEO_URL"
-        yt-dlp -o "$VIDEO_OUTPUT_TEMPLATE" -f bestvideo+bestaudio "$VIDEO_URL"
-
-        # Extract the actual downloaded filename from the output template
-        VIDEO_FILE=$(find . -maxdepth 1 -name "*.mp4" -print | sort -t/ -k2 | tail -n 1)
-
-        echo "Downloaded video file: $VIDEO_FILE"
-        
-
-        # Define the output template and filename
-        CC_OUTPUT_TEMPLATE="%(title)s-en.vtt"
-
-        # Download the subtitle
-        echo "Downloading subtitles video from: $CC_URL"
-        yt-dlp -o "$CC_OUTPUT_TEMPLATE" "$CC_URL"
-
-        # Extract the actual downloaded filename from the output template
-        CC_FILE=$(find . -maxdepth 1 -name "*.vtt" -print | sort -t/ -k2 | tail -n 1)
-
-        echo "Downloaded subtitles video file: $CC_FILE"
-
-
-        # Merge video and subtitles
-        echo "Merging video and subtitles..."
-        ffmpeg -i "$VIDEO_FILE" -i "$CC_FILE" -c copy -c:s mov_text "output_with_subtitles.mp4"
-
-        
-        # Increment the counter
-        COUNTER=$(expr $COUNTER + 1)
+# Function to detect awk
+detect_awk() {
+    if command -v gawk >/dev/null 2>&1; then
+        echo "gawk"
+    elif command -v awk >/dev/null 2>&1; then
+        echo "awk"
+    elif command -v busybox >/dev/null 2>&1 && busybox awk >/dev/null 2>&1; then
+        echo "busybox awk"
     else
-        echo "Error: Invalid URL pair at line $COUNTER, skipping."
+        echo "none"
     fi
-done < "$INPUT_FILE"
+}
 
-echo "Finished downloading all videos and captions."
+AWK_CMD=$(detect_awk)
+
+# Abort if awk not found
+if [ "$AWK_CMD" = "none" ]; then
+    echo "❌ Error: No awk found" >&2
+    exit 1
+fi
+
+# Warn if not gawk (for UTF-8 handling)
+if [ "$AWK_CMD" != "gawk" ]; then
+    echo "⚠ Warning: Using $AWK_CMD — UTF-8 support may be limited." >&2
+fi
+
+# Use awk to extract URLs and download with yt-dlp
+$AWK_CMD -F',' '
+BEGIN {
+    COUNTER = 1
+}
+NR > 1 {  # Skip header row
+
+    # Print counter (for logging)
+    printf("📼 Processing video" COUNTER ":\n")
+
+    # Remove quotes from field 1 (assuming URL is in column 1)
+    CHAPTER = $1
+    NAME = $2
+    VIDEO_URL = $3
+    CC_URL = $4
+    VIDEO = CHAPTER "." COUNTER " VID " NAME ".mp4"
+    SUB = CHAPTER "." COUNTER " SUB " NAME ".vtt"
+    gsub(/^"|"$/, "", VIDEO_URL)
+    gsub(/^"|"$/, "", CC_URL)
+
+    # Build command to download video with yt-dlp
+    video_cmd = "yt-dlp -o \"" VIDEO "\" -f bestvideo+bestaudio \"" VIDEO_URL "\""
+    print "📥 Downloading:", VIDEO_URL
+    system(video_cmd)
+    
+    # Build command to download subs with yt-dlp
+    cc_cmd = "yt-dlp -o \"" SUB "\" \"" CC_URL "\""
+    print "📥 Downloading:", CC_URL
+    system(cc_cmd)
+
+    # Merge video and subtitles
+    print "🔀 Merging " VIDEO " and " SUB " :"
+    merge_cmd = "ffmpeg -i \"" VIDEO "\" -i \"" SUB "\" -c copy -c:s mov_text \"" CHAPTER "." COUNTER " "  NAME ".mp4\""
+    system(merge_cmd)
+
+    COUNTER++
+
+}
+' "$CSV_FILE"
