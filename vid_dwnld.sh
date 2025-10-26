@@ -6,6 +6,35 @@ CSV_FILE="$1"
 # Set UTF-8 locale (for glibc-based distros)
 export LC_ALL=C.UTF-8
 
+#Check yt-dlp is installed
+if ! which yt-dlp > /dev/null; then
+        printf "\n\n\033[1;33mNOTICE: \033[0mThis script uses the third-party 'yt-dlp' package to download your videos.
+        \n\033[1;31mERROR: \033[0mThe 'which' binary did not find yt-dlp on your device.
+        \n\n\033[38;5;214mTo download and install the package, use your package-manager:
+        \n\033[0mLinux: \n
+        Agnostic package-managers - 'flatpak install yt-dlp' OR 'sudo snap yt-dlp'\n
+        Alpine - sudo apk add yt-dlp\n
+        Arch-based distro - 'sudo pacman -S yt-dlp' OR 'yay -S yt-dlp'\n
+        Debian-based distro - sudo apt install yt-dlp\n
+        Fedora-based distro - 'sudo dnf install yt-dlp' OR 'sudo yum install yt-dlp' OR 'sudo rpm -i yt-dlp'\n
+        Gentoo-based distro - 'sudo emerge app-misc/yt-dlp' OR via 'pip'\n
+        OpenSUSE-based distro - sudo zypper install yt-dlp\n
+        Slackware-based distro - via 'pip'\n
+
+        \nPython (via pip):\n
+        python3 -m pip install -U yt-dlp\n
+
+        \nUnix:\n
+        FreeBSD - sudo pkg install yt-dlp\n
+        NetBSD - sudo pkgin install yt-dlp\n
+        MacOS - 'brew install yt-dlp' OR 'sudo port install yt-dlp'\n
+        OpenBSD - sudo pkg_add yt-dlp\n
+
+        \nWindows:\n
+        Use Windows Subsystems for Linux (WSL)\n"
+        exit 1
+fi
+
 # Function to detect awk
 detect_awk() {
     if command -v gawk >/dev/null 2>&1; then
