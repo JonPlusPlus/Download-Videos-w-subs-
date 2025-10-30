@@ -35,6 +35,12 @@ if ! which yt-dlp > /dev/null; then
         exit 1
 fi
 
+#If no.args != 1, echo & exit
+if [ "$#" -ne 1 ]; then
+        printf "Usage: $0 <input_file>"
+        exit 1
+fi
+
 # Function to detect awk
 detect_awk() {
     if command -v gawk >/dev/null 2>&1; then
