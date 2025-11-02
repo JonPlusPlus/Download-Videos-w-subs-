@@ -37,8 +37,17 @@ fi
 
 #If no.args != 1, echo & exit
 if [ "$#" -ne 1 ]; then
-        printf "Usage: $0 <input_file>"
-        exit 1
+        printf "Usage: $0 <input_file>\n"
+        
+        # MY INSERT
+        echo "Input CSV File..."
+        read INPUT_FILE
+fi
+
+# Check if the input file exists
+if [ ! -f "$INPUT_FILE" ]; then
+    echo "Error: File '$INPUT_FILE' not found!"
+    exit 1
 fi
 
 # Function to detect awk
