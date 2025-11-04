@@ -37,10 +37,10 @@ fi
 
 #If no.args != 1, echo & exit
 if [ "$#" -ne 1 ]; then
-        printf "Usage: $0 <input_file>\n"
+        printf "\033[1;38;5;226mINFO:\033[0m Inline Usage: $0 <input_file>\n"
         
         # MY INSERT
-        printf "Input CSV File..."
+        printf "\nInput CSV File..."
         read CSV_FILE
 fi
 
