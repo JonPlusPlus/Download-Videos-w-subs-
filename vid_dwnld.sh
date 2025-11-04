@@ -40,26 +40,26 @@ if [ "$#" -ne 1 ]; then
         printf "Usage: $0 <input_file>\n"
         
         # MY INSERT
-        echo "Input CSV File..."
-        read INPUT_FILE
+        printf "Input CSV File..."
+        read CSV_FILE
 fi
 
 # Check if the input file exists
-if [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: File '$INPUT_FILE' not found!"
+if [ ! -f "$CSV_FILE" ]; then
+    printf "Error: File '$CSV_FILE' not found!"
     exit 1
 fi
 
 # Function to detect awk
 detect_awk() {
     if command -v gawk >/dev/null 2>&1; then
-        echo "gawk"
+        printf "gawk"
     elif command -v awk >/dev/null 2>&1; then
-        echo "awk"
+        printf "awk"
     elif command -v busybox >/dev/null 2>&1 && busybox awk >/dev/null 2>&1; then
-        echo "busybox awk"
+        printf "busybox awk"
     else
-        echo "none"
+        printf "none"
     fi
 }
 
@@ -67,13 +67,13 @@ AWK_CMD=$(detect_awk)
 
 # Abort if awk not found
 if [ "$AWK_CMD" = "none" ]; then
-    echo "❌ Error: No awk found" >&2
+    printf "❌ Error: No awk found" >&2
     exit 1
 fi
 
 # Warn if not gawk (for UTF-8 handling)
 if [ "$AWK_CMD" != "gawk" ]; then
-    echo "⚠ Warning: Using $AWK_CMD — UTF-8 support may be limited." >&2
+    printf "⚠ Warning: Using $AWK_CMD — UTF-8 support may be limited." >&2
 fi
 
 # Use awk to extract URLs and download with yt-dlp
